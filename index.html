@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Manager</title>
+</head>
+<body>
+    <h1>Book Manager</h1>
+    
+    <h2>Add Book</h2>
+    <div id="addMessage"></div>
+    <form id="addBookForm">
+        <div>
+            <label for="addName">Book Name:</label>
+            <input type="text" id="addName" required>
+        </div>
+        <div>
+            <label for="addAuthor">Author:</label>
+            <input type="text" id="addAuthor" required>
+        </div>
+        <div>
+            <label for="addRating">Rating:</label>
+            <input type="number" id="addRating" min="1" max="5" step="0.1" required>
+        </div>
+        <button type="submit">Add Book</button>
+    </form>
+    
+    <h2>Rate Book</h2>
+    <div id="updateMessage"></div>
+    <form id="updateBookForm">
+        <div>
+            <label for="updateName">Book Name:</label>
+            <input type="text" id="updateName" required>
+        </div>
+        <div>
+            <label for="updateAuthor">Author:</label>
+            <input type="text" id="updateAuthor" required>
+        </div>
+        <div>
+            <label for="updateRating">New Rating:</label>
+            <input type="number" id="updateRating" min="1" max="5" step="0.1" required>
+        </div>
+        <button type="submit">Update Rating</button>
+    </form>
+    
+    <h2>All Books</h2>
+    <button onclick="loadAllBooks()">Refresh Books</button>
+    <div id="booksList">
+        <p>No books yet.</p>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        
+        // Add Book
+        document.getElementById('addBookForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('addName').value;
+            const author = document.getElementById('addAuthor').value;
+            const rating = parseFloat(document.getElementById('addRating').value);
+            
+            try {
+                const response = await fetch(`${API_BASE}/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, author, rating })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('addMessage').textContent = data.message;
+                    document.getElementById('addBookForm').reset();
+                    loadAllBooks();
+                } else {
+                    document.getElementById('addMessage').textContent = data.detail || 'Error adding book';
+                }
+            } catch (error) {
+                document.getElementById('addMessage').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Update Book
+        document.getElementById('updateBookForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('updateName').value;
+            const author = document.getElementById('updateAuthor').value;
+            const rating = parseFloat(document.getElementById('updateRating').value);
+            
+            try {
+                const response = await fetch(`${API_BASE}/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, author, rating })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('updateMessage').textContent = data.message;
+                    document.getElementById('updateBookForm').reset();
+                    loadAllBooks();
+                } else {
+                    document.getElementById('updateMessage').textContent = data.detail || 'Error updating book';
+                }
+            } catch (error) {
+                document.getElementById('updateMessage').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Load all books
+        async function loadAllBooks() {
+            try {
+                const response = await fetch(`${API_BASE}/get_all_books`);
+                const books = await response.json();
+                
+                const booksList = document.getElementById('booksList');
+                
+                if (books.length === 0) {
+                    booksList.innerHTML = '<p>No books yet.</p>';
+                    return;
+                }
+                
+                let html = '<ul>';
+                books.forEach(book => {
+                    html += `<li>
+                        <strong>${book.name}</strong> by ${book.author}
+                        <br>Rating: ${book.rating.toFixed(1)} (${book.no_rating} ratings)
+                    </li>`;
+                });
+                html += '</ul>';
+                booksList.innerHTML = html;
+            } catch (error) {
+                document.getElementById('booksList').innerHTML = `<p>Error loading books: ${error.message}</p>`;
+            }
+        }
+        
+        // Load books on page load
+        window.addEventListener('load', loadAllBooks);
+    </script>
+</body>
+</html>
